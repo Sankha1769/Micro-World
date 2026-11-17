@@ -1,12 +1,15 @@
 #!/bin/bash
-# Rebuilds index.html from src/. Needs: npm install three@0.160.0 esbuild
+# Concatenate sources, bundle three.js in, and assemble the single-file page.
 set -e
-cd "$(dirname "$0")"
-cat src/core.js src/data.js src/micro.js src/bio.js src/cells.js src/app.js | sed -E 's/\bBlob\b/Amoeboid/g' > main.tmp.js
-npx esbuild main.tmp.js --bundle --minify --format=iife --target=es2020 --outfile=bundle.tmp.js --log-level=warning
+cd /home/claude/mv
+FILES="src/core.js src/new_common.js"
+for f in src/new_*.js; do case $f in src/new_common.js|src/new_post.js) ;; *) FILES="$FILES $f";; esac; done
+FILES="$FILES src/data.js src/new_post.js src/micro.js src/bio.js src/cells.js src/app.js"
+cat $FILES | sed -E 's/\bBlob\b/Amoeboid/g' > vendor/main.js
+vendor/node_modules/.bin/esbuild vendor/main.js --bundle --minify --format=iife --target=es2020 --outfile=out/bundle.js --log-level=warning
 python3 - <<'PY'
-head=open('parts/00_head.html').read()
-js=open('bundle.tmp.js').read().replace('</script','<\\/script')
-open('index.html','w').write(head+'\n<script>\n'+js+'\n</script>\n')
+head=open('/home/claude/mv/parts/00_head.html').read()
+js=open('/home/claude/mv/out/bundle.js').read().replace('</script','<\\/script')
+open('/home/claude/mv/out/microverse.html','w').write(head+'\n<script>\n'+js+'\n</script>\n')
 PY
-rm main.tmp.js bundle.tmp.js
+ls -la out/microverse.html

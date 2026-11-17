@@ -16,6 +16,7 @@ const BUILD = {
   plant: buildPlantCell, guard: buildGuard, pollen: buildPollen, chloroplast: buildChloroplast,
   phage: buildPhage, flu: buildInfluenza, corona: buildCorona, animal: buildAnimalCell,
 };
+Object.assign(BUILD, NEWBUILD);
 const LIB = SPEC.filter(s => s.cat !== 'anat');
 const catOf = id => CATS.find(c => c.id === id);
 const catName = id => (catOf(id) || { name: 'Cell anatomy' }).name;
@@ -31,17 +32,17 @@ const ease = t => t * t * (3 - 2 * t);
 const stage = $('stage'), canvas = $('gl');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = .95;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
 renderer.localClippingEnabled = true; renderer.setClearColor(0x000000, 0);
 const scene = new THREE.Scene();
 scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), .04).texture;
 const camera = new THREE.PerspectiveCamera(38, 1, .02, 400);
 scene.add(camera);
 function rig(cam) {
-  cam.add(new THREE.HemisphereLight(0x9fd8ff, 0x0a1420, .45));
-  const k = new THREE.DirectionalLight(0xffffff, 2.2); k.position.set(4, 6, 5); cam.add(k);
-  const f = new THREE.DirectionalLight(0x5aa8ff, .7); f.position.set(-6, -2, 2); cam.add(f);
-  const r = new THREE.DirectionalLight(0x41d3d6, 1.5); r.position.set(-2, 3, -6); cam.add(r);
+  cam.add(new THREE.HemisphereLight(0xffffff, 0xd9d3c3, .55));
+  const k = new THREE.DirectionalLight(0xffffff, 2.4); k.position.set(4, 6, 5); cam.add(k);
+  const f = new THREE.DirectionalLight(0xfff0dc, .9); f.position.set(-6, -2, 3); cam.add(f);
+  const r = new THREE.DirectionalLight(0xffffff, 1.1); r.position.set(-2, 3, -6); cam.add(r);
 }
 rig(camera);
 const controls = new OrbitControls(camera, canvas);
@@ -53,9 +54,21 @@ const motes = (() => {
   for (let i = 0; i < n; i++) { const d = randDir(R), r = .8 + R() * .9; pos.set([d.x * r, d.y * r * .7, d.z * r], i * 3); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   const map = canvasTex(32, 32, (c, w, hh) => { const gr = c.createRadialGradient(16, 16, 0, 16, 16, 16); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = gr; c.fillRect(0, 0, w, hh); });
-  const p = new THREE.Points(g, new THREE.PointsMaterial({ size: 3, sizeAttenuation: false, color: 0x9fe7ea, map, transparent: true, opacity: .32, depthWrite: false }));
+  const p = new THREE.Points(g, new THREE.PointsMaterial({ size: 3, sizeAttenuation: false, color: 0x8c9a86, map, transparent: true, opacity: .3, depthWrite: false }));
   p.frustumCulled = false; scene.add(p); return p;
 })();
+
+/* soft contact shadow under the specimen */
+const shadow = (() => {
+  const map = canvasTex(128, 128, (c, w, hh) => { const gr = c.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, 'rgba(60,64,55,.34)'); gr.addColorStop(.55, 'rgba(60,64,55,.12)'); gr.addColorStop(1, 'rgba(60,64,55,0)'); c.fillStyle = gr; c.fillRect(0, 0, w, hh); }, false);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map, transparent: true, depthWrite: false, toneMapped: false }));
+  m.rotation.x = -Math.PI / 2; m.renderOrder = -2; scene.add(m); return m;
+})();
+function placeShadow(S) {
+  const b = new THREE.Box3().setFromObject(S.group), sz = b.getSize(V());
+  shadow.position.set((b.min.x + b.max.x) / 2, b.min.y - Math.max(sz.y, 1) * .12 - .15, (b.min.z + b.max.z) / 2);
+  const r = Math.max(sz.x, sz.z, 1.2) * 1.35; shadow.scale.set(r, r, 1);
+}
 
 /* ---------- state ---------- */
 let cur = null, curDef = null, simT = 0, animOn = true, secOn = false, introK = 1, loadTok = 0, view = 'explore', tw = null;
@@ -90,7 +103,7 @@ async function load(id, { keep = false } = {}) {
   try { S = buildSpec(def); } catch (e) { console.error('build failed', id, e); $('loading').classList.remove('on'); toast('Could not build ' + def.name); return; }
   clearSel();
   if (cur) { scene.remove(cur.group); disposeSpec(cur); }
-  cur = S; curDef = def; scene.add(S.group); introK = 0; simT = 0;
+  cur = S; curDef = def; scene.add(S.group); introK = 0; simT = 0; placeShadow(S);
   controls.minDistance = def.dist * .08; controls.maxDistance = def.dist * 2.4 * fitK();
   const dir = V(.28, .2, 1).normalize();
   camera.position.copy(dir).multiplyScalar(def.dist * fitK()); controls.target.set(0, 0, 0); controls.update(); tw = null;
@@ -113,7 +126,11 @@ function renderInfo() {
   const d = curDef;
   $('hCat').textContent = catName(d.cat); $('hName').textContent = d.name; $('hSci').textContent = d.latin;
   $('iCat').textContent = catName(d.cat); $('iName').textContent = d.name; $('iSci').textContent = d.latin; $('iDesc').textContent = d.desc;
-  const f = $('iFacts'); f.replaceChildren(); [['Size', d.size], ...d.facts].forEach(([a, b]) => f.append(h('dt', {}, a), h('dd', {}, b)));
+  const f = $('iFacts'); f.replaceChildren();
+  const rows = d.cls ? [['Classification', d.cls], ['Size', d.size], ['Habitat', d.habitat], ['Movement', d.move], ['Nutrition', d.feed], ['Reproduction', d.repro]] : [['Size', d.size], ...d.facts];
+  rows.forEach(([a, b]) => f.append(h('dt', {}, a), h('dd', {}, b)));
+  const fun = d.fun || []; $('funWrap').hidden = !fun.length; $('iFun').replaceChildren(...fun.map(t => h('li', {}, t)));
+  const nt = $('iNote'); nt.hidden = !d.note; if (d.note) nt.replaceChildren(h('b', {}, 'About this model'), d.note);
   $('sLbl').textContent = ANATOMY.includes(d.id) ? 'Organelles and structures' : 'Structures';
   renderStructs(); showPart(null);
 }
@@ -134,7 +151,7 @@ function hlMat(m) {
   if (Array.isArray(m)) return m.map(hlMat);
   if (hlCache.has(m)) return hlCache.get(m);
   const c = m.clone(); c.clippingPlanes = m.clippingPlanes;
-  if ('emissive' in c) { c.emissive = new THREE.Color(0x41d3d6); c.emissiveIntensity = .5; hlMats.add(c); }
+  if ('emissive' in c) { c.emissive = new THREE.Color(0xd5aa60); c.emissiveIntensity = .55; hlMats.add(c); }
   hlCache.set(m, c); return c;
 }
 function clearSel() {
@@ -217,7 +234,7 @@ $('zoomR').addEventListener('input', e => {
 let hudKey = '';
 function updateHud() {
   if (!curDef) return;
-  const H = stage.clientHeight || 1, umPerUnit = curDef.sizeUm / curDef.U;
+  const H = stage.clientHeight || 1, umPerUnit = curDef.umPerUnit || curDef.sizeUm / curDef.U;
   const worldH = 2 * dist() * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   const pxPerUm = H / (worldH * umPerUnit), mag = pxPerUm * 264.6;
   const ideal = 120 / pxPerUm, p10 = Math.pow(10, Math.floor(Math.log10(ideal)));
@@ -254,17 +271,23 @@ $('btnFs').onclick = () => {
 document.addEventListener('fullscreenchange', () => { $('btnFs').textContent = document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen'; });
 
 /* ---------- library sidebar ---------- */
-const closed = new Set();
+const closed = new Set(); let catFilter = 'all';
+function thumbSlot(id, cls) { return h('span', { class: cls, 'data-tn': id }, THUMB[id] ? h('img', { src: THUMB[id], alt: '', width: 96, height: 60 }) : null); }
+function renderChips() {
+  const box = $('chips'); box.replaceChildren(...[{ id: 'all', short: 'All' }, ...CATS].map(c => h('button', { class: catFilter === c.id ? 'on' : '', 'aria-pressed': catFilter === c.id, onclick: () => { catFilter = c.id; renderChips(); renderCats($('search').value); } }, c.short)));
+}
 function renderCats(filter = '') {
   const f = filter.trim().toLowerCase(), box = $('catList'); box.replaceChildren();
   CATS.forEach(c => {
+    if (catFilter !== 'all' && catFilter !== c.id) return;
     const items = LIB.filter(s => s.cat === c.id && (!f || (s.name + ' ' + s.latin).toLowerCase().includes(f)));
     if (!items.length) return;
     const sec = h('div', { class: 'cat' + (closed.has(c.id) && !f ? ' closed' : '') });
     sec.append(
       h('button', { onclick: () => { closed.has(c.id) ? closed.delete(c.id) : closed.add(c.id); sec.classList.toggle('closed'); }, 'aria-expanded': !closed.has(c.id) },
-        h('span', { class: 'lbl', style: 'color:' + c.col }, c.name), h('span', { class: 'n' }, items.length)),
-      h('ul', {}, items.map(s => h('li', {}, h('button', { class: 'sp' + (curDef && curDef.id === s.id ? ' on' : ''), onclick: () => load(s.id) }, h('span', {}, s.name), h('small', {}, fmtUm(s.sizeUm))))))
+        h('span', { class: 'lbl', style: 'border-left:3px solid ' + c.col + ';padding-left:8px' }, c.name), h('span', { class: 'n' }, items.length)),
+      h('ul', {}, items.map(s => h('li', {}, h('button', { class: 'sp' + (curDef && curDef.id === s.id ? ' on' : ''), onclick: () => load(s.id) },
+        thumbSlot(s.id, 'tn'), h('span', { class: 'nm' }, s.name, h('i', {}, s.latin)), h('small', {}, fmtUm(s.sizeUm))))))
     );
     box.append(sec);
   });
@@ -279,8 +302,8 @@ function ensureThumbRenderer() {
   try {
     const c = document.createElement('canvas'); c.width = 480; c.height = 300;
     tr = new THREE.WebGLRenderer({ canvas: c, antialias: true, preserveDrawingBuffer: true });
-    tr.setPixelRatio(1); tr.setSize(480, 300, false); tr.toneMapping = THREE.ACESFilmicToneMapping; tr.toneMappingExposure = .95;
-    tr.localClippingEnabled = true; tr.setClearColor(0x0b1b2c, 1);
+    tr.setPixelRatio(1); tr.setSize(480, 300, false); tr.toneMapping = THREE.ACESFilmicToneMapping; tr.toneMappingExposure = 1.1;
+    tr.localClippingEnabled = true; tr.setClearColor(0xbfe9ec, 1);
     tScene = new THREE.Scene(); tScene.environment = new THREE.PMREMGenerator(tr).fromScene(new RoomEnvironment(), .04).texture;
     tCam = new THREE.PerspectiveCamera(38, 1.6, .02, 400); tScene.add(tCam); rig(tCam);
     return true;
@@ -301,7 +324,7 @@ function startThumbs() {
     if (!def) { thumbRunning = false; store.set('mv-parts', PARTS); if (view === 'journal') renderJournal(); return; }
     try {
       THUMB[def.id] = makeThumb(def);
-      const slot = document.querySelector(`[data-thumb="${def.id}"]`); if (slot) slot.replaceChildren(h('img', { src: THUMB[def.id], alt: '', width: 480, height: 300 }));
+      document.querySelectorAll(`[data-thumb="${def.id}"],[data-tn="${def.id}"]`).forEach(slot => slot.replaceChildren(h('img', { src: THUMB[def.id], alt: '', width: 480, height: 300 })));
     } catch (e) { console.warn('thumb failed', def.id, e); }
     setTimeout(step, 60);
   };
@@ -353,20 +376,21 @@ function renderJournal() {
   });
 }
 function renderCmp() {
-  const lo = -2.8, hi = 3.4, pos = u => ((Math.log10(u) - lo) / (hi - lo) * 100).toFixed(2) + '%';
+  const lo = -2.8, hi = 4.3, pos = u => ((Math.log10(u) - lo) / (hi - lo) * 100).toFixed(2) + '%';
   const wrap = h('div', { id: 'cmp' });
-  const ticks = [[.01, '10 nm'], [.1, '100 nm'], [1, '1 µm'], [10, '10 µm'], [100, '100 µm'], [1000, '1 mm']];
+  const ticks = [[.01, '10 nm'], [.1, '100 nm'], [1, '1 µm'], [10, '10 µm'], [100, '100 µm'], [1000, '1 mm'], [10000, '1 cm']];
   wrap.append(h('div', { class: 'axis' }, ticks.map(([u, t]) => h('span', { style: 'left:' + pos(u) }, t)), ticks.map(([u]) => h('i', { style: 'left:' + pos(u) }))));
-  const lv = [6, 50, 20, 64];
+  const lvA = [6, 50, 20, 64], lvB = [4, 50, 20, 66, 82, 98];
   const row = (label, sub, items, cls = '') => {
+    const lv = items.length > 6 ? lvB : lvA;
     const rt = h('div', { class: 'rt' }, ticks.map(([u]) => h('div', { class: 'gl', style: 'left:' + pos(u) })));
     items.sort((a, b) => a.u - b.u).forEach((it, i) => {
       const cur_ = curDef && curDef.id === it.id;
       rt.append(h('i', { class: 'dot' + (cur_ ? ' cur' : ''), style: 'left:' + pos(it.u) }));
-      const attrs = { class: 'dl' + (cur_ ? ' cur' : ''), style: `left:${pos(it.u)};top:${lv[i % 4]}px` };
+      const attrs = { class: 'dl' + (cur_ ? ' cur' : ''), style: `left:${pos(it.u)};top:${lv[i % lv.length]}px` };
       rt.append(it.id ? h('button', { ...attrs, onclick: () => { setView('explore'); load(it.id); } }, it.name, h('small', {}, fmtUm(it.u))) : h('span', attrs, it.name, h('small', {}, fmtUm(it.u))));
     });
-    return h('div', { class: 'crow ' + cls }, h('div', { class: 'rl' }, h('div', { class: 'lbl' }, label), h('div', { style: 'font-size:11px;color:var(--mute);margin-top:2px' }, sub)), rt);
+    return h('div', { class: 'crow ' + cls, style: items.length > 6 ? 'height:124px' : null }, h('div', { class: 'rl' }, h('div', { class: 'lbl' }, label), h('div', { style: 'font-size:11px;color:var(--mute);margin-top:2px' }, sub)), rt);
   };
   CATS.forEach(c => { const it = LIB.filter(s => s.cat === c.id).map(s => ({ id: s.id, name: s.name, u: s.sizeUm })); wrap.append(row(c.name, it.length + ' specimens', it)); });
   wrap.append(row('Reference', 'Familiar scales', [{ name: 'DNA helix width', u: .0023 }, { name: 'Ribosome', u: .025 }, { name: 'Human hair width', u: 70 }, { name: 'Grain of table salt', u: 400 }], 'ref'));
@@ -437,6 +461,6 @@ function tick(now) {
 requestAnimationFrame(tick);
 
 /* ---------- boot ---------- */
-syncAna(); renderCats(); warmParts();
+syncAna(); renderChips(); renderCats(); if (!window.__noThumbs) { warmParts(); setTimeout(startThumbs, 2500); }
 { const id = location.hash.slice(1); load(BYID[id] ? id : 'amoeba', { keep: true }); }
 window.__mv = { build: buildSpec, info: () => renderer.info.render, load, setView, get cur() { return cur; }, LIB, selectPart, secToggle: () => $('tSec').click() };
