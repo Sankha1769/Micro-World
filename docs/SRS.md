@@ -146,9 +146,13 @@ The comparison view displays logarithmic tick marks from 10 nm to 1 cm, plotting
 Displays total unlocked specimens and organelle parts, with a persistent percentage progress indicator.
 ![Discovery Journal Overlay](screenshots/desktop-journal.png)
 
-#### 3.1.5 Mobile & Touchscreen Interfaces
-On small viewports ($<768\,\text{px}$), panels collapse into floating bottom-sheet trays accessible via dedicated action buttons (`btnSpecs`, `btnInfo`).
-![Mobile Viewport](screenshots/phone-library-open.png)
+#### 3.1.5 Small Screen & Mobile Viewport Adaptation
+On mobile viewports ($<640\,\text{px}$), the application automatically adapts into an ergonomic mobile layout featuring touch-friendly drawer panels, swipeable cards, and safe-area inset handling—delivered completely within the single HTML file.
+<p align="center">
+  <img src="screenshots/phone-explorer.png" width="31%" alt="Mobile Stage" />
+  <img src="screenshots/phone-library-open.png" width="31%" alt="Species Drawer" />
+  <img src="screenshots/phone-welcome.png" width="31%" alt="Mobile Welcome Screen" />
+</p>
 
 ### 3.2 Hardware Interfaces
 - **Mouse & Trackpad:** Left button for orbit rotation; right button / shift+left button for planar panning; scroll wheel for continuous focal zooming.
@@ -185,12 +189,14 @@ On small viewports ($<768\,\text{px}$), panels collapse into floating bottom-she
 - **FR-2.3 [MUST]:** Real-time text search shall match against specimen common names, scientific binomials, taxonomic groups, and morphological features with latency under 15ms.
 
 ### 4.3 Multi-Layer Anatomical Raycasting & Structure Selection (FR-3)
+![Structure Raycasting and Selection](screenshots/specimen-inspection.png)
 - **FR-3.1 [MUST]:** The system shall perform 3D raycasting through the camera frustum from pointer screen coordinates $(x, y)$.
 - **FR-3.2 [MUST]:** When a ray intersects multiple nested parts (e.g., cell capsule, plasma membrane, nucleoid), successive clicks on the same screen coordinate shall cycle through intersecting structures in depth order.
 - **FR-3.3 [MUST]:** Selected parts shall be visually emphasized using an animated emissive pulse shader ($0.4 \le I_{\text{emissive}} \le 0.62$).
 - **FR-3.4 [MUST]:** Selecting a structure shall immediately populate the Inspector Panel with its anatomical name, biological role, and cellular significance.
 
 ### 4.4 Dynamic Optical Cross-Section Slicing (FR-4)
+![Dynamic Optical Cross-Section](screenshots/specimen-cross-section.png)
 - **FR-4.1 [MUST]:** The system shall provide an optical cross-section toggle button (`#tSec`) that activates a global GPU clipping plane (`THREE.Plane`).
 - **FR-4.2 [MUST]:** When enabled, the clipping plane shall slice geometry along the specimen's principal axis, exposing internal organelles without altering mesh geometry data.
 - **FR-4.3 [MUST]:** Slicing depth shall be adjustable via a dedicated slider widget.
@@ -218,6 +224,13 @@ On small viewports ($<768\,\text{px}$), panels collapse into floating bottom-she
 ### 4.8 Responsive Multi-Device UI & Workspace Collapse (FR-8)
 - **FR-8.1 [MUST]:** Desktop users shall be able to independently collapse or expand the library tray (`#btnLib`), the details panel (`#btnPanel`), or top navigation (`#btnNav`).
 - **FR-8.2 [MUST]:** On mobile viewports ($\le 480\,\text{px}$), the application shall automatically adapt navigation into high-contrast touch buttons.
+
+### 4.9 Single-File Unified Architecture & Mobile Adaptation (FR-9)
+- **FR-9.1 [MUST]:** The entire application shall compile into exactly one self-contained HTML file (`index.html` / `dist/microverse.html`) with zero external runtime dependencies.
+- **FR-9.2 [MUST]:** The single file shall responsively accommodate viewports from 360 px smartphones up to 4K desktop displays via fluid CSS Grid, Flexbox, and media queries.
+- **FR-9.3 [MUST]:** Sliding side panels (`#side` and `#info`) shall adapt into full-height touch drawers on screens $\le 980\,\text{px}$ without obstructing the 3D viewport canvas.
+- **FR-9.4 [MUST]:** Touch gestures (1-finger drag rotate, 2-finger pinch zoom, 2-finger pan) shall be natively supported across all mobile and tablet browsers.
+- **FR-9.5 [MUST]:** Viewport meta tags shall enforce `viewport-fit=cover` and safe-area inset spacing (`env(safe-area-inset-top)`, `env(safe-area-inset-bottom)`) for modern notch and rounded displays.
 
 ---
 

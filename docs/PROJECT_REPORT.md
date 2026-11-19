@@ -273,7 +273,7 @@ Users can interact directly with 3D structures:
 3. Intersected meshes trigger an emissive golden glow shader (`Va.forEach(m => m.emissiveIntensity = pulse)`).
 4. Successive clicks cycle through deeper layers (e.g., outer capsule $\to$ peptidoglycan wall $\to$ plasma membrane $\to$ cytoplasm $\to$ nucleoid).
 5. The inspector updates with anatomical descriptions, biochemical roles, and microscopy notes.
-![About & Structure Inspection](screenshots/desktop-about.png)
+![Organelle Inspection](screenshots/specimen-inspection.png)
 
 ### 5.3 Dynamic Optical Cross-Section Slicing
 Activating the **Cross-section** button enables a global Three.js clipping plane:
@@ -284,6 +284,7 @@ material.clippingPlanes = [slicePlane];
 material.clipShadows = true;
 ```
 This cleanly slices outer envelopes to expose internal ribosomes, vacuoles, and nuclei without expensive CSG geometry computation.
+![Optical Sectioning](screenshots/specimen-cross-section.png)
 
 ### 5.4 Logarithmic Comparative Axis (10 nm to 1 cm)
 The **Compare** view positions specimens along a continuous logarithmic axis spanning 7 orders of magnitude:
@@ -300,6 +301,18 @@ The application adapts across devices. On desktop, sidebars can be collapsed to 
 <p align="center">
   <img src="screenshots/desktop-collapsed.png" width="48%" alt="Collapsed View" />
   <img src="screenshots/phone-library-open.png" width="48%" alt="Mobile Drawer" />
+</p>
+
+### 5.7 Unified Single-File Architecture & Mobile Viewport Adaptation
+To maximize accessibility, offline reliability, and deployment simplicity, MICROVERSE 3.0 bundles the entire application into **a single self-contained HTML file** (`index.html` / `dist/microverse.html`):
+- **Universal Device Adaptation:** Fluidly accommodates everything from 360 px smartphones up to 4K desktop workstations without requiring multiple HTML builds.
+- **Hardware Safe-Area Inset Handling:** Integrates `env(safe-area-inset-bottom)` and `env(safe-area-inset-top)` for edge-to-edge rendering without obstruction by device notches or home indicators.
+- **Touch-Optimized Drawers:** Features sliding side sheets with drag dismissal and touch gesture support (1-finger orbit, 2-finger zoom).
+- **Zero-Dependency Bundle:** Inlines all Three.js r160 routines, GLSL procedural shaders, 1,128 parametric geometry constructors, and scientific metadata into one 2.7 MB file.
+<p align="center">
+  <img src="screenshots/phone-explorer.png" width="31%" alt="Mobile Stage" />
+  <img src="screenshots/phone-library-open.png" width="31%" alt="Mobile Species Drawer" />
+  <img src="screenshots/phone-welcome.png" width="31%" alt="Mobile Welcome Screen" />
 </p>
 
 ---

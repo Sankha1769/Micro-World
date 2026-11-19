@@ -103,7 +103,7 @@ Built on a zero-dependency, single-file HTML architecture ($2.7\,\text{MB}$), MI
   - Frustum-based raycasting tests intersections against all meshes and nested groups.
   - Clicking an exterior membrane selects it; clicking again at the same point penetrates to interior organelles (e.g., mitochondria, nucleoid, chloroplasts).
   - Selected parts trigger a golden emissive pulse shader and display a structured anatomical summary card.
-![Structure Selection Modal](screenshots/desktop-about.png)
+![Structure Selection and Organelle Inspection](screenshots/specimen-inspection.png)
 
 ### 4.4 Virtual Optical Cross-Section Slicing
 - **Purpose:** Simulate confocal optical sectioning to reveal internal ultrastructures without destructive geometry slicing.
@@ -111,6 +111,7 @@ Built on a zero-dependency, single-file HTML architecture ($2.7\,\text{MB}$), MI
   - Powered by GPU clipping planes (`material.clippingPlanes`).
   - Smooth planar cut reveals inner organelle distribution while maintaining front-face and back-face material capping.
   - Real-time slice plane position slider adjusts cut depth.
+![Optical Sectioning Slicing](screenshots/specimen-cross-section.png)
 
 ### 4.5 Logarithmic Comparative Axis (10 nm to 1 cm)
 - **Purpose:** Contextualize the immense scale variance across the microscopic kingdom.
@@ -137,6 +138,20 @@ Built on a zero-dependency, single-file HTML architecture ($2.7\,\text{MB}$), MI
 <p align="center">
   <img src="screenshots/desktop-collapsed.png" width="48%" alt="Collapsed Desktop View" />
   <img src="screenshots/phone-library-open.png" width="48%" alt="Mobile Drawer View" />
+</p>
+
+### 4.8 Unified Single-File Architecture & Mobile Optimization
+- **Purpose:** Deliver a first-class virtual microscope experience on desktops, laptops, tablets, and smartphones inside a single, zero-dependency HTML file (`index.html`).
+- **Specification:**
+  - Compiled into exactly one standalone file (`index.html` / `dist/microverse.html`, 2.7 MB) with zero external network requests.
+  - Fluid CSS Grid layout adapting smoothly from 360 px mobile phones up to 4K desktop screens.
+  - Slide-over touch drawers with swipeable cards and safe-area inset handling (`env(safe-area-inset-bottom)`).
+  - Multi-touch pinch zoom and 1-finger orbit rotation native support.
+  - Complete offline functionality with persistent `localStorage` journal tracking.
+<p align="center">
+  <img src="docs/screenshots/phone-explorer.png" width="31%" alt="Mobile Stage" />
+  <img src="docs/screenshots/phone-library-open.png" width="31%" alt="Mobile Species Drawer" />
+  <img src="docs/screenshots/phone-welcome.png" width="31%" alt="Mobile Welcome Screen" />
 </p>
 
 ---
